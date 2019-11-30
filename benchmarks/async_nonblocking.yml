@@ -1,0 +1,14 @@
+threads: 100
+iterations: 3
+base: "http://localhost:5020"
+rampup: 2
+
+plan:
+  - name: Fetch Dogs
+    request:
+      url: "/"
+
+  - name: Fetch Dogs with latency
+    request:
+      url: "/?latency=15"
+

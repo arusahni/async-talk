@@ -1,0 +1,93 @@
+version: "3.7"
+services:
+  db:
+    image: postgres:12.1
+    restart: always
+    environment:
+      POSTGRES_DB: canine
+      POSTGRES_USER: canine
+      POSTGRES_PASSWORD: canine
+    ports:
+      - "15432:5432"
+
+  canine:
+    build:
+      context: "."
+      dockerfile: Dockerfile
+    image: canine
+    command: "hypercorn -k uvloop --bind 0.0.0.0:80 canine:app"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./src/
+        target: /usr/src/app/
+        consistency: cached
+      - type: bind
+        source: ./dogs/
+        target: /usr/src/dogs/
+        consistency: cached
+    ports:
+      - "8000:80"
+
+  sync:
+    image: canine
+    command: "python sync.py"
+    environment:
+      DB_URI: "postgresql://canine:canine@db:5432/canine"
+      FLASK_ENV: production
+    volumes:
+      - type: bind
+        source: ./src/
+        target: /usr/src/app/
+        consistency: cached
+      - type: bind
+        source: ./dogs/
+        target: /usr/src/dogs/
+        consistency: cached
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - canine
+
+  async_blocking:
+    image: canine
+    command: "python async_blocking.py"
+    environment:
+      DB_URI: "postgresql://canine:canine@db:5432/canine"
+      QUART_ENV: production
+    volumes:
+      - type: bind
+        source: ./src/
+        target: /usr/src/app/
+        consistency: cached
+      - type: bind
+        source: ./dogs/
+        target: /usr/src/dogs/
+        consistency: cached
+    ports:
+      - "5010:5000"
+    depends_on:
+      - db
+      - canine
+
+  async_nonblocking:
+    image: canine
+    command: "python async_nonblocking.py"
+    environment:
+      DB_URI: "postgresql://canine:canine@db:5432/canine"
+      QUART_ENV: production
+    volumes:
+      - type: bind
+        source: ./src/
+        target: /usr/src/app/
+        consistency: cached
+      - type: bind
+        source: ./dogs/
+        target: /usr/src/dogs/
+        consistency: cached
+    ports:
+      - "5020:5000"
+    depends_on:
+      - db
+      - canine
